@@ -1,5 +1,5 @@
 <template>
-  <div id="chart-container" style="height: 800px;width:100%">Hello World</div>
+  <div id="chart-container" style="height: 500px;width:100%">Hello World</div>
 </template>
 
 <script>
@@ -8,11 +8,16 @@ import * as echarts from 'echarts'
 export default {
   name: 'AncestryViewer',
   mounted () {
-    this.data = this.wrapData(this.raw, this.categories, this.types)
+    const [ceudata, yridata] = this.wrapData(this.raw, this.categories, this.types)
+    console.log(ceudata, yridata)
+    this.ceudata = ceudata
+    this.yridata = yridata
     this.initChart()
   },
   data () {
     return {
+      ceudata: [],
+      yridata: [],
       categories: ['True Ancestry Hap 0', 'Predict Ancestry Hap 0', 'True Ancestry Hap 1', 'Predict Ancestry Hap 1', 'True Ancestry Hap 2', 'Predict Ancestry Hap 2', 'True Ancestry Hap 3', 'Predict Ancestry Hap 3', 'True Ancestry Hap 4', 'Predict Ancestry Hap 4', 'True Ancestry Hap 5', 'Predict Ancestry Hap 5', 'True Ancestry Hap 6', 'Predict Ancestry Hap 6', 'True Ancestry Hap 7', 'Predict Ancestry Hap 7', 'True Ancestry Hap 8', 'Predict Ancestry Hap 8', 'True Ancestry Hap 9', 'Predict Ancestry Hap 9', 'True Ancestry Hap 10', 'Predict Ancestry Hap 10', 'True Ancestry Hap 11', 'Predict Ancestry Hap 11', 'True Ancestry Hap 12', 'Predict Ancestry Hap 12', 'True Ancestry Hap 13', 'Predict Ancestry Hap 13', 'True Ancestry Hap 14', 'Predict Ancestry Hap 14', 'True Ancestry Hap 15', 'Predict Ancestry Hap 15', 'True Ancestry Hap 16', 'Predict Ancestry Hap 16', 'True Ancestry Hap 17', 'Predict Ancestry Hap 17', 'True Ancestry Hap 18', 'Predict Ancestry Hap 18', 'True Ancestry Hap 19', 'Predict Ancestry Hap 19'],
       title: 'Ancestry Viewer',
       startIndex: 0,
@@ -25,20 +30,36 @@ export default {
   },
   methods: {
     wrapData (rawData, categories, types) {
-      const data = rawData.map((data, index) => {
+      const ceu = rawData.filter(item => {
+        console.log(item)
+        if (item[1] === 'CEU') return true
+        return false
+      })
+      const yri = rawData.filter(item => {
+        if (item[1] === 'YRI') return true
+        return false
+      })
+      const ceudata = ceu.map((data, index) => {
         const [category, typename, start, end] = data
         const typeItem = types.filter((element) => {
           if (element.name === typename) return true
         })
         return {
           name: typeItem[0].name,
-          value: [categories.indexOf(category), start, end, end - start],
-          itemStyle: {
-            color: typeItem[0].color
-          }
+          value: [categories.indexOf(category), start, end, end - start]
         }
       })
-      return data
+      const yridata = yri.map((data, index) => {
+        const [category, typename, start, end] = data
+        const typeItem = types.filter((element) => {
+          if (element.name === typename) return true
+        })
+        return {
+          name: typeItem[0].name,
+          value: [categories.indexOf(category), start, end, end - start]
+        }
+      })
+      return [ceudata, yridata]
     },
     renderItem (params, api) {
       let categoryIndex = api.value(0)
@@ -81,6 +102,13 @@ export default {
           text: this.title,
           left: 'center'
         },
+        legend: {
+          show: true,
+          left: 0,
+          formatter: function (name) {
+            return name
+          }
+        },
         dataZoom: [
           {
             type: 'slider',
@@ -93,7 +121,11 @@ export default {
             filterMode: 'weakFilter',
             yAxisIndex: 0,
             showDataShadow: false,
-            labelFormatter: ''
+            labelFormatter: '',
+            startValue: 0,
+            endValue: 10,
+            maxValueSpan: 10,
+            throttle: 0
           }
         ],
         grid: {
@@ -114,6 +146,7 @@ export default {
         series: [
           {
             type: 'custom',
+            name: 'CEU',
             renderItem: this.renderItem,
             itemStyle: {
               opacity: 0.8
@@ -122,7 +155,19 @@ export default {
               x: [1, 2],
               y: 0
             },
-            data: this.data
+            data: this.ceudata
+          }, {
+            type: 'custom',
+            name: 'YRI',
+            renderItem: this.renderItem,
+            itemStyle: {
+              opacity: 0.8
+            },
+            encode: {
+              x: [1, 2],
+              y: 0
+            },
+            data: this.yridata
           }
         ]
       }
